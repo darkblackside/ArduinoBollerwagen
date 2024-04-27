@@ -8,13 +8,13 @@
 
 char ssid[] = WIFI_SSID;
 char pass[] = WIFI_PASSWORD;
-char updateUrl[] = BOLLERWAGEN_UPDATE_URL;
-char configUrl[] = BOLLERWAGEN_CONFIG_URL;
+String updateUrl(BOLLERWAGEN_UPDATE_URL);
+String configUrl(BOLLERWAGEN_CONFIG_URL);
 
 int minResistanceSlider = 50;
 int maxResistanceSlider = 750;
 int deltafaktor = 1000;
-int negativeBoost = 0;
+int boostfaktor = 0;
 int useFormula = 1;
 
 void setup() {
@@ -52,7 +52,7 @@ void loop() {
     }
     
     int x = (analogBaseValue - minResistanceSlider) * (1024.0 / (maxResistanceSlider - minResistanceSlider));
-    int y = (x*x)/deltafaktor - negativeBoost;
+    int y = (x*x)/deltafaktor - boostfaktor;
     Serial.print("input             ");
     Serial.println(analogRead(A0));
     Serial.print("input transformed ");
@@ -63,8 +63,11 @@ void loop() {
     i = (i + 1) % 200;
 
     if(i == 0) {
-      Serial.println("call update.php");
-      updateOutput();
+      updateOutput(x, y);
+    }
+
+    if(y < 0) {
+      y = 0;
     }
     
     analogWrite(PWM, y);
@@ -72,20 +75,37 @@ void loop() {
   }
 }
 
-void updateOutput()
+void updateOutput(int readValue, int outputValue)
 {
   HTTPClient http;
   WiFiClient client;
-  http.begin(client, updateUrl);
-  int httpCode = http.POST("voltage1=12&voltage2=12&minValue=8&maxValue=800");
+  String fullCallUpdateUrl = updateUrl + "&readValue=" + readValue + "&outputValue=" + outputValue + "&voltage1=0&voltage2=0";
+  http.begin(client, fullCallUpdateUrl);
+  int httpCode = http.GET();
 
   if (httpCode > 0)
   {
+    Serial.println(fullCallUpdateUrl);
       if (httpCode == HTTP_CODE_OK)
       {
-          Serial.println("Connection Success!");
+          Serial.println("update settings success");
           String payload = http.getString();
-          Serial.println(payload);
+
+          String deltafaktorStr = payload.substring(0, 9);
+          String useFormulaStr = payload.substring(10, 19);
+          String boostfaktorStr = payload.substring(20, 29);
+
+          deltafaktor = deltafaktorStr.toInt();
+          boostfaktor = boostfaktorStr.toInt();
+          useFormula = useFormulaStr.toInt();
+
+          Serial.print("updated deltafaktor=");
+          Serial.print(deltafaktor);
+          Serial.print(" useFormula=");
+          Serial.print(useFormulaStr);
+          Serial.print(" negativeBoost=");
+          Serial.println(boostfaktor);
+          
           http.end();
        }
 
@@ -93,7 +113,7 @@ void updateOutput()
     }
     else
     {
-        Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
+        Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
         http.end();
     }
 
@@ -118,10 +138,10 @@ void updateSettings()
 
           String deltafaktorStr = payload.substring(0, 9);
           String useFormulaStr = payload.substring(10, 19);
-          String negativeBoostStr = payload.substring(20, 29);
+          String boostfaktorStr = payload.substring(20, 29);
 
           deltafaktor = deltafaktorStr.toInt();
-          negativeBoost = negativeBoostStr.toInt();
+          boostfaktor = boostfaktorStr.toInt();
           useFormula = useFormulaStr.toInt();
 
           Serial.print("updated deltafaktor=");
@@ -129,7 +149,7 @@ void updateSettings()
           Serial.print(" useFormula=");
           Serial.print(useFormulaStr);
           Serial.print(" negativeBoost=");
-          Serial.println(negativeBoost);
+          Serial.println(boostfaktor);
           
           http.end();
        }
