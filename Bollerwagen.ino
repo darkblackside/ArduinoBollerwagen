@@ -129,7 +129,7 @@ void updateSettings()
           Serial.print(" useFormula=");
           Serial.print(useFormulaStr);
           Serial.print(" negativeBoost=");
-          Serial.print(negativeBoost);
+          Serial.println(negativeBoost);
           
           http.end();
        }
