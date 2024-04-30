@@ -4,7 +4,16 @@
 #include <secrets.h>
 
 #define LED 2
-#define PWM D1
+#define PWM D6
+#define VSENS1 D8
+#define VSENS2 D7
+
+#define STATUSLED D0
+#define LED1 D1
+#define LED2 D2
+#define LED3 D3
+#define LED4 D4
+#define LED5 D5
 
 //1 = every second
 int callUpdatePhp = 20;
@@ -26,6 +35,12 @@ void setup() {
   Serial.begin(115200);
   
   pinMode(LED,OUTPUT);
+  pinMode(STATUSLED,OUTPUT);
+  pinMode(LED1,OUTPUT);
+  pinMode(LED2,OUTPUT);
+  pinMode(LED3,OUTPUT);
+  pinMode(LED4,OUTPUT);
+  pinMode(LED5,OUTPUT);
   pinMode(PWM,OUTPUT);
   
   WiFi.begin(ssid, pass);
@@ -78,9 +93,42 @@ void loop() {
     if(i == 0) {
       updateOutput(x, y, 0.0, 0.0);
     }
+
+    writeLed(y);
     
     analogWrite(PWM, y);
     delay(100);
+  }
+}
+
+void writeLed(int setValue)
+{
+  digitalWrite(STATUSLED, HIGH);
+  digitalWrite(LED1, LOW);
+  digitalWrite(LED2, LOW);
+  digitalWrite(LED3, LOW);
+  digitalWrite(LED4, LOW);
+  digitalWrite(LED5, LOW);
+
+  if(setValue > 10)
+  {
+    digitalWrite(LED1, HIGH);
+  }
+  if(setValue > 200)
+  {
+    digitalWrite(LED2, HIGH);
+  }
+  if(setValue > 400)
+  {
+    digitalWrite(LED3, HIGH);
+  }
+  if(setValue > 600)
+  {
+    digitalWrite(LED4, HIGH);
+  }
+  if(setValue > 800)
+  {
+    digitalWrite(LED5, HIGH);
   }
 }
 
